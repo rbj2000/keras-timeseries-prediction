@@ -1,0 +1,53 @@
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+plt.style.use('fivethirtyeight')
+sns.set()
+#%matplotlib inline
+import plotly.offline as py
+#py.init_notebook_mode(connected=True)
+import plotly.graph_objs as go
+import statsmodels.api as sm
+import xgboost as xgb
+import lightgbm as lgb
+from sklearn.model_selection import train_test_split
+from IPython.display import display
+
+from plotly import __version__
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+
+import warnings
+# import the_module_that_warns
+
+warnings.filterwarnings("ignore")
+
+from fbprophet import Prophet
+
+
+## for Deep-learing:
+import keras
+from keras.layers import Dense
+from keras.models import Sequential
+from keras.utils import to_categorical
+from keras.optimizers import SGD,Adadelta,Adam,RMSprop 
+from keras.callbacks import EarlyStopping
+from keras.utils import np_utils
+import itertools
+from keras.layers import LSTM
+from keras.layers.convolutional import Conv1D
+from keras.layers.convolutional import MaxPooling1D
+from keras.layers import Dropout
+
+def load_data(datapath):
+    data = pd.read_csv(datapath, index_col=0)
+   # Dimensions
+    print('Shape:', data.shape)
+    # Set of features we have are: date, store, and item
+    display(data.sample(10))
+    return data
+
+train_df = load_data('../input/train.csv')
+test_df = load_data('../input/test.csv')
+#sample_df = load_data('../input/sample_submission.csv')

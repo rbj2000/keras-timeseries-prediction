@@ -1,0 +1,83 @@
+import numpy as np
+import pandas as pd
+import scipy.stats as st
+import statsmodels as sm
+import warnings
+# Matplotlib e Seaborn
+import matplotlib.pyplot as plt
+# %matplotlib inline
+import seaborn as sns
+sns.set(style="white", palette="muted", color_codes=True)
+# Plotly
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+import plotly.graph_objs as go
+init_notebook_mode()
+
+# Read train.csv file and set datatype
+data_type = {'store': 'int8', 'item': 'int8', 'sales': 'int16'}
+df = pd.read_csv("../input/train.csv", parse_dates= ['date'], dtype= data_type)
+df.describe()
+
+#plt.show()
+#Normal distribution check
+
+print("p-value for sales distribution: {}".format(st.normaltest(df.sales.values)[1]))
+plt.figure(figsize=(12,5))
+plt.title("Distribution of sales vs best fit normal distribution")
+ax = sns.distplot(df.sales, fit= st.norm, kde=True, color='g')
+
+#plt.show()
+
+#find best distribution
+
+# Code (function) adapted from https://stackoverflow.com/questions/6620471/fitting-empirical-distribution-to-theoretical-ones-with-scipy-python
+def best_fit_distribution(data, bins= 200):
+     y, x = np.histogram(data, bins=bins, density=True)
+     x = (x + np.roll(x, -1))[:-1] / 2.0
+     DISTRIBUTIONS = [        
+         st.alpha,st.beta,st.chi,st.chi2, st.dgamma,st.dweibull,st.erlang,st.exponweib,
+         st.f, st.genexpon,st.gausshyper,st.gamma, st.johnsonsb,st.johnsonsu, st.norm,
+         st.rayleigh,st.rice,st.recipinvgauss, st.t, st.weibull_min,st.weibull_max
+     ]
+     best_distribution = st.norm
+     best_params = (0.0, 1.0)
+     best_sse = np.inf
+     for distribution in DISTRIBUTIONS:
+        #try:
+        with warnings.catch_warnings():
+             warnings.filterwarnings('ignore')
+             params = distribution.fit(data)
+             arg = params[:-2]
+             loc = params[-2]
+             scale = params[-1]
+             pdf = distribution.pdf(x, loc=loc, scale=scale, *arg)
+             sse = np.sum(np.power(y - pdf, 2.0))
+             if best_sse > sse > 0:
+                 best_distribution = distribution
+                 best_params = params
+                 best_sse = sse
+        #except Exception:
+        #    pass
+     return (best_distribution.name, best_params)
+
+
+plt.figure(figsize=(12,5))
+plt.title("Distribution of sales vs Johnson-SB distribution (best fit)")
+ax = sns.distplot(df.sales, fit= st.johnsonsb, kde=True, color='g')
+
+#plt.show()
+
+
+
+monthly_df = df.groupby([df.date.dt.year, df.date.dt.month])['sales'].mean()
+monthly_df.index = monthly_df.index.set_names(['year', 'month'])
+monthly_df = monthly_df.reset_index()
+x_axis = []
+for y in range(13, 18):
+    for m in range(1,12):
+        x_axis.append("{}/{}".format(m,y))
+trace = go.Scatter(x= x_axis, y= monthly_df.sales, mode= 'lines+markers', name= 'sales avg per month', line=dict(width=3))
+layout = go.Layout(autosize=True, title= 'Sales - average per month', showlegend=True)
+fig = go.Figure(data=[trace], layout=layout)
+iplot(fig)
+
