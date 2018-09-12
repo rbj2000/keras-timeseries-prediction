@@ -82,26 +82,20 @@ sample_size = dates.size-1
 stores = train_df.index.levels[1].unique()
 items = train_df.index.levels[2].unique()
 
-# shift dataset to calculate difference (avoid tends in data)
+# shift dataset to calculate difference (avoid trends in data)
 diff_train_df = (train_df -np.roll(train_df,1,axis=0)).astype(float)
-#diff_test_df = (test_df -np.roll(test_df,1,axis=0)).astype(float)
 # fill 1st vector with seros
-
-#diff_train_df[0]=(np.zeros((10,50),dtype=int)).astype(float)
-#diff_test_df[0]=(np.zeros((10,50),dtype=int)).astype(float)
-#diff_train_df[0]=np.zeros(diff_train_df.shape,dtype=float)
-#diff_test_df[0]=np.zeros(diff_test_df.shape,dtype=float)
 
 
 diff_train_df.loc['2013-01-01'] = 0
 
 #normalize data sets
 
-train_max= np.max(abs(diff_train_df))
+#train_max= np.max(abs(diff_train_df))
 #test_max= np.max(abs(diff_test_df))
 
 
-diff_train_df = diff_train_df/train_max
+#diff_train_df = diff_train_df/train_max
 
 
 #scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -142,6 +136,10 @@ for date in dates[1:1826]:
 	iter += 1
 	input = output
 
+#normalize data sets
+
+train_max= np.max(abs(diff_train_df))
+diff_train_df = diff_train_df/train_max
 
 now = datetime.now()
 
@@ -186,6 +184,6 @@ print("Loaded model from disk")
  
 # evaluate loaded model on test data
 loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-score = loaded_model.evaluate(X, Y, verbose=0)
+score = loaded_model.evaluate(X_train, y_train, verbose=0)
 print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
 
