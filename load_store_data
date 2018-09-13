@@ -58,7 +58,9 @@ def load_data(datapath):
 
 def fit_lstm(train_input, train_output, batch_size, nb_epoch, neurons):
 	model = Sequential()
-	model.add(LSTM(neurons, activation='hard_sigmoid', batch_input_shape=(batch_size, train_input.shape[1], train_input.shape[2]), stateful=True))
+	model.add(LSTM(neurons, activation='hard_sigmoid', batch_input_shape=(batch_size, train_input.shape[1], train_input.shape[2]), return_sequences=True, stateful=True,recurrent_dropout=0.2))
+	model.add(LSTM(neurons, activation='hard_sigmoid', return_sequences=True, stateful=True,recurrent_dropout=0.2))
+	model.add(LSTM(neurons, activation='hard_sigmoid', stateful=True,recurrent_dropout=0.2))
 	model.add (Dense(500) )
 	model.add(Reshape((10,50)) )
 	model.compile(loss='mean_squared_error', optimizer='adam')
@@ -67,7 +69,13 @@ def fit_lstm(train_input, train_output, batch_size, nb_epoch, neurons):
 		model.reset_states()
 	return model
 
-	
+def refit_lstm(train_input, train_output, batch_size, nb_epoch, model):
+	model.compile(loss='mean_squared_error', optimizer='adam')
+	for i in range(nb_epoch):
+		model.fit(train_input, train_output, epochs=1, batch_size=batch_size, verbose=1, shuffle=False)
+		model.reset_states()
+	return model
+
 train_df = load_data('./input/train.csv')
 
 # Prepare train data
@@ -161,7 +169,8 @@ X_train, X_test, y_train, y_test = train_test_split(input_set, output_set, test_
 #Sequence classification with LSTM
 
 #lstm_model = fit_lstm(X_train,y_train, 1, 50, 1000)
-	
+#lstm_model = fit_lstm(X_train[0:1270],y_train[0:1270], 127, 50, 500)
+
 scores = lstm_model.evaluate(X_train,y_train, verbose=0,batch_size=1)
 #print("%s: %.2f%%" % (lstm_model.metrics_names[1], scores[1]*100))
 # serialize model to JSON
@@ -181,9 +190,10 @@ loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
 loaded_model.load_weights("model.h5")
 print("Loaded model from disk")
- 
+
 # evaluate loaded model on test data
 loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+#lstm_model = refit_lstm(X_train[0:1270],y_train[0:1270], 127, 50, lstm_model)
 score = loaded_model.evaluate(X_train, y_train, verbose=0)
 print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
 
