@@ -55,12 +55,11 @@ def load_data(datapath):
 	display(data.sample(10))
 	return data
 
-
+# one LSTM + Dense , stateless
 def fit_lstm(train_input, train_output, batch_size, nb_epoch, neurons):
 	model = Sequential()
-	model.add(LSTM(neurons, activation='hard_sigmoid', batch_input_shape=(batch_size, train_input.shape[1], train_input.shape[2]), return_sequences=True, stateful=True,recurrent_dropout=0.2))
-	model.add(LSTM(neurons, activation='hard_sigmoid', return_sequences=True, stateful=True,recurrent_dropout=0.2))
-	model.add(LSTM(neurons, activation='hard_sigmoid', stateful=True,recurrent_dropout=0.2))
+#	model.add(LSTM(neurons, activation='hard_sigmoid', batch_input_shape=(batch_size, train_input.shape[1], train_input.shape[2]), return_sequences=True, stateful=True,recurrent_dropout=0.2))
+	model.add(LSTM(neurons, activation='hard_sigmoid', batch_input_shape=(batch_size, train_input.shape[1], train_input.shape[2]), recurrent_dropout=0.2))
 	model.add (Dense(500) )
 	model.add(Reshape((10,50)) )
 	model.compile(loss='mean_squared_error', optimizer='adam')
@@ -183,16 +182,19 @@ print("Saved model to disk")
 
 
 # load json and create model
-json_file = open('model.json', 'r')
+json_file = open('model_lstm.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
-loaded_model.load_weights("model.h5")
+loaded_model.load_weights("model_lstm.h5")
 print("Loaded model from disk")
 
 # evaluate loaded model on test data
+loaded_model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+scores = loaded_model.evaluate(X_train,y_train, verbose=0,batch_size=1)
 #lstm_model = refit_lstm(X_train[0:1270],y_train[0:1270], 127, 50, lstm_model)
 score = loaded_model.evaluate(X_train, y_train, verbose=0)
 print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
